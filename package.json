@@ -1,0 +1,30 @@
+{
+  "name": "stimulus-bind",
+  "version": "0.1.0",
+  "description": "Enable simple data binding for stimulus framework",
+  "main": "dist/stimulus-bind.umd.js",
+  "scripts": {
+    "build": "mkdir -p dist; coffee -b -cp stimulus-bind.coffee > dist/stimulus-bind.es; rollup -c"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/luikore/stimulus-bind.git"
+  },
+  "keywords": [
+    "stimulus",
+    "data-binding"
+  ],
+  "author": "luikore",
+  "license": "BSD-2-Clause",
+  "bugs": {
+    "url": "https://github.com/luikore/stimulus-bind/issues"
+  },
+  "homepage": "https://github.com/luikore/stimulus-bind#readme",
+  "devDependencies": {
+    "coffeescript": "^2.2.3",
+    "jsep": "^0.3.3",
+    "rollup": "^0.56.5",
+    "rollup-plugin-node-resolve": "^3.2.0",
+    "stimulus": "^1.0.1"
+  }
+}

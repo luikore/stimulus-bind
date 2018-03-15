@@ -1,4 +1,5 @@
-import Stimulus from 'stimulus'
+import Stimulus from "stimulus"
+import jsep from "jsep"
 
 dasherize = (s) ->
   s.replace /([A-Z])/g, (_, char) ->
@@ -200,13 +201,7 @@ connectObserver = (self) ->
       subtree: true
     }
 
-Stimulus.Bind = (klass, kvs) ->
-  klass.targets = []
-  for k of kvs
-    klass.targets.push k
-  klass.$bind = compileBind kvs
-
-Stimulus.Bind.Controller = class extends Stimulus.Controller
+StimulusBind = class extends Stimulus.Controller
   initialize: ->
     self = @
     self.$applyQueue = {}
@@ -242,3 +237,16 @@ Stimulus.Bind.Controller = class extends Stimulus.Controller
 
   disconnect: ->
     disconnectObserver @
+
+stimulusApp = null
+StimulusBind.register = (klass, binding) ->
+  if !stimulusApp
+    stimulusApp = Stimulus.Application.start()
+
+  stimulusApp.register klass
+  klass.targets = []
+  for k of kvs
+    klass.targets.push k
+  klass.$bind = compileBind kvs
+
+export default StimulusBind
