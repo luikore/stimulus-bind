@@ -1,6 +1,16 @@
-Stimulus with simple, one-way data binding to reduce boiler plate code.
+Use [Stimulusjs](stimulusjs.org) with simple, one-way data binding to reduce boilerplate code.
+
+It is just a 3k file when gzipped.
 
 ### Usage
+
+Include in your project:
+
+    yarn add stimulus-bind jsep stimulus
+    # or
+    npm i stimulus-bind jsep stimulus --save
+
+Or use the `stimulus.umd.js` directly (which can expose a `StimulusBind` in global).
 
 Template
 
@@ -20,7 +30,6 @@ The use of `data-controller`, `data-action` and `data-target` is the same as in 
 The JS is a bit different:
 
 ```js
-// or use it from global directly
 import StimulusBind from 'stimulus-bind'
 
 class MyController extends StimulusBind {
@@ -49,7 +58,7 @@ All bindings are one-way binding.
 
 When the dependent data changed, targets with binders will react the update at once.
 
-Expressions must a string of simple js expression. In the expression we allow:
+Expressions must a string of simple js expression that `jsep` can parse. In the expression we allow:
 
 - function calls
 - operators
