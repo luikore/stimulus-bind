@@ -1,3 +1,4 @@
+import Stimulus from 'stimulus'
 
 dasherize = (s) ->
   s.replace /([A-Z])/g, (_, char) ->
@@ -9,6 +10,25 @@ camelize = (s) ->
 
 compileTraverse = (ast, dependencies, out) ->
   switch ast.type
+    when 'CallExpression'
+      compileTraverse ast.callee, dependencies, out
+      out.push '('
+      firstArg = true
+      for a in ast.arguments
+        if !firstArg
+          out.push ','
+        firstArg = false
+        compileTraverse a, dependencies, out
+      out.push ')'
+
+    when 'MemberExpression'
+      compileTraverse ast.object, dependencies, out
+      if ast.property.type == 'Identifier'
+        out.push '.'
+        out.push ast.property.name
+      else
+        throw "bad member expression property: #{ast.type}, must be Identifier"
+
     when 'UnaryExpression'
       out.push '('
       if ast.prefix
@@ -17,12 +37,14 @@ compileTraverse = (ast, dependencies, out) ->
       if !ast.prefix
         out.push(ast.operator)
       out.push ')'
+
     when 'BinaryExpression'
       out.push '('
       compileTraverse(ast.left, dependencies, out)
       out.push(ast.operator)
       compileTraverse(ast.right, dependencies, out)
       out.push ')'
+
     when 'ConditionalExpression'
       out.push '('
       compileTraverse(ast.test, dependencies, out)
@@ -31,12 +53,15 @@ compileTraverse = (ast, dependencies, out) ->
       out.push ':'
       compileTraverse(ast.alternate, dependencies, out)
       out.push ')'
+
     when 'MemberExpression'
       compileTraverse(ast.object, dependencies, out)
       out.push '.'
       compileTraverse(ast.property, dependencies, out)
+
     when 'Literal'
       out.push ast.raw
+
     when 'Identifier'
       dependencies[ast.name] = true
       out.push 'self.' + ast.name
@@ -79,11 +104,25 @@ classApplyer = (className) ->
     else
       target.className = tc.replace(" #{className} ", ' ').trim()
 
+attrApplyer = (attrName) ->
+  (self, target, value) ->
+    target.setAttribute attrName, value
+
 ifApplyer = (self, target, value) ->
-  target
-  # true: detach target from document, and leave a comment mark there (with reference to the mark)
-  # false: insert back the target near the comment mark
-  # and we need to change stimulus target query so we won't need re-render at all
+  m = target.$marker
+
+  if !target.parentNode and value
+    m.parentNode.insertBefore(target, m.nextSibling)
+    [_..., targetName] = target.getAttribute('data-target').split('.')
+    delete self.$detachedTargets[targetName]
+
+  else if target.parentNode and !value
+    [_..., targetName] = target.getAttribute('data-target').split('.')
+    if !m
+      m = target.$marker = document.createComment " if !#{targetName} "
+    target.parentNode.insertBefore m, target
+    target.parentNode.removeChild target
+    self.$detachedTargets[targetName] = target
 
 convertAttrApplyer = (attr) ->
   switch attr
@@ -105,7 +144,8 @@ convertAttrApplyer = (attr) ->
     when 'if'
       ifApplyer
     else
-      throw "bad binding: " + attr + " for " + identifier + '.' + t
+      # just set attribute
+      attrApplyer attr
 
 compileBind = (bind) ->
   result = {}
@@ -123,24 +163,28 @@ refreshCalc = (self) ->
     for {targetSpec, calc} in bs
       self.$applyQueue[targetSpec] = calc(self)
 
-applyChanges = (self) ->
+applyChanges = (self, force) ->
   haveChanges = false
   for k of self.$applyQueue
     haveChanges = true
     break
-  return if not haveChanges
+  return if (not haveChanges) and (not force)
 
+  applyQueue = self.$applyQueue
+  self.$applyQueue = {} # eager clear
+
+  # TODO something like virtual dom so we can reduce disconnect/connect even more?
   disconnectObserver self
-  for spec, value of self.$applyQueue
+  for spec, value of applyQueue
     [targetName, attr] = spec.split('.')
     applyer = convertAttrApplyer attr
-    targets = [self.targets.findAll(targetName)..., [t for tname, t of self.$detachedTargets when tname == targetName]...]
-    for target in targets
-      applyer self, target, value # TODO try...catch
-  self.$applyQueue = {}
-  setTimeout ->
-    connectObserver self
-  , 0
+    targets = [self.targets.findAll(targetName)..., (t for tname, t of self.$detachedTargets when tname == targetName)...]
+    try
+      for target in targets
+        applyer self, target, value # TODO try...catch
+    catch e
+      throw e
+  connectObserver self
 
 disconnectObserver = (self) ->
   if self.$targetObserverConnected
@@ -156,43 +200,45 @@ connectObserver = (self) ->
       subtree: true
     }
 
-Stimulus.Bind = {
-  Controller: class extends Stimulus.Controller
-    initialize: ->
-      self = @
-      self.$applyQueue = {}
-      self.$detachedTargets = []
-      if !self.constructor.$bind
-        self.constructor.$bind = compileBind self.constructor.bind
+Stimulus.Bind = (klass, kvs) ->
+  klass.targets = []
+  for k of kvs
+    klass.targets.push k
+  klass.$bind = compileBind kvs
 
-      self.$bindData = {}
-      for name, bs of self.constructor.$bind
-        do (name, bs) ->
-          self.$bindData[name] = undefined;
-          Object.defineProperty self, name, {
-            get: -> self.$bindData[name]
-            set: (x) ->
-              self.$bindData[name] = x
-              for {targetSpec, calc} in bs
-                self.$applyQueue[targetSpec] = calc(self) # TODO make use of element's own dataset
-              applyChanges self # TODO debounce this method
-          }
-
-      # create observer, but not bind it yet
-      self.$targetObserverConnected = false
-      self.$targetObserver = new MutationObserver (mList) ->
-        # TODO: when element with data-target is added for the first time,
-        #       should run binding to initialize it
-        for m in mList
-          if m.type == 'childList' || (m.type == 'attributes' && m.attributeName == 'data-target')
-            refreshCalc self
+Stimulus.Bind.Controller = class extends Stimulus.Controller
+  initialize: ->
+    self = @
+    self.$applyQueue = {}
+    self.$detachedTargets = []
+    self.$bindData = {}
+    for name, bs of self.constructor.$bind
+      do (name, bs) ->
+        self.$bindData[name] = undefined;
+        Object.defineProperty self, name, {
+          get: -> self.$bindData[name]
+          set: (x) ->
+            self.$bindData[name] = x
+            for {targetSpec, calc} in bs
+              self.$applyQueue[targetSpec] = calc(self) # TODO make use of element's own dataset
             applyChanges self
-            return
+        }
 
-    connect: ->
-      disconnectObserver @
-      connectObserver @
+    # create observer, but not bind it yet
+    self.$targetObserver = new MutationObserver (mList) ->
+      for m in mList
+        if m.type == 'childList' || (m.type == 'attributes' && m.attributeName == 'data-target')
+          refreshCalc self
+          applyChanges self
+          return
 
-    disconnect: ->
-      disconnectObserver @
-}
+  ref: (name) ->
+    @targets.find name
+
+  connect: ->
+    self = @
+    refreshCalc self
+    applyChanges self, true
+
+  disconnect: ->
+    disconnectObserver @
