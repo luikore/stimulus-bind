@@ -86,7 +86,7 @@ compileExpr = (src) ->
   compileTraverse(ast, dependencies, out)
   calc = "(function(self) { return " + out.join('') + "; })"
   calc = eval calc
-  {calc, dependencies: [v for v of dependencies]}
+  {calc, dependencies: (v for v of dependencies)}
 
 valueApplyer = (self, target, value) ->
   target.value = value
@@ -125,7 +125,13 @@ ifApplyer = (self, target, value) ->
   if !target.parentNode and value
     m.parentNode.insertBefore(target, m.nextSibling)
     [_..., targetName] = target.getAttribute('data-target').split('.')
-    delete self.$detachedTargets[targetName]
+    if self.$detachedTargets[targetName]
+      targetIndex = null
+      for t, i in self.$detachedTargets[targetName]
+        if t == target
+          targetIndex = i
+      if targetIndex
+        self.$detachedTargets[targetName][targetIndex..targetIndex] = []
 
   else if target.parentNode and !value
     [_..., targetName] = target.getAttribute('data-target').split('.')
@@ -133,30 +139,31 @@ ifApplyer = (self, target, value) ->
       m = target.$marker = document.createComment " if !#{targetName} "
     target.parentNode.insertBefore m, target
     target.parentNode.removeChild target
-    self.$detachedTargets[targetName] = target
+    if !self.$detachedTargets[targetName]
+      self.$detachedTargets[targetName] = []
+    self.$detachedTargets[targetName].push target
 
 convertAttrApplyer = (attr) ->
-  switch attr
-    when 'value'
-      valueApplyer
-    when 'checked'
-      checkedApplyer
-    when 'disabled'
-      disabledApplyer
-    when 'text'
-      textApplyer
-    when 'html'
-      htmlApplyer
-    when 'style'
-      styleName = camelize(attr.slice(5, attr.length))
-      styleApplyer styleName
-    when 'class'
-      classApplyer attr.slice(5, attr.length)
-    when 'if'
-      ifApplyer
-    else
-      # just set attribute
-      attrApplyer attr
+  if attr == 'value'
+    valueApplyer
+  else if attr == 'checked'
+    checkedApplyer
+  else if attr == 'disabled'
+    disabledApplyer
+  else if attr == 'text'
+    textApplyer
+  else if attr == 'html'
+    htmlApplyer
+  else if attr.startsWith 'style-'
+    styleName = camelize(attr.slice(6, attr.length))
+    styleApplyer styleName
+  else if attr.startsWith 'class-'
+    classApplyer attr.slice(6, attr.length)
+  else if attr == 'if'
+    ifApplyer
+  else
+    # just set attribute
+    attrApplyer attr
 
 compileBind = (bind) ->
   result = {}
@@ -189,7 +196,11 @@ applyChanges = (self, force) ->
   for spec, value of applyQueue
     [targetName, attr] = spec.split('.')
     applyer = convertAttrApplyer attr
-    targets = [self.targets.findAll(targetName)..., (t for tname, t of self.$detachedTargets when tname == targetName)...]
+    targets = self.targets.findAll targetName
+    targets = (t for t in targets)
+    if self.$detachedTargets[targetName]
+      for t in self.$detachedTargets[targetName]
+        targets.push(t)
     try
       for target in targets
         applyer self, target, value # TODO try...catch
@@ -215,7 +226,7 @@ StimulusBind = class extends Stimulus.Controller
   initialize: ->
     self = @
     self.$applyQueue = {}
-    self.$detachedTargets = []
+    self.$detachedTargets = {}
     self.$bindData = {}
     for name, bs of self.constructor.$bind
       do (name, bs) ->
