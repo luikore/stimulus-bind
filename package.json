@@ -1,6 +1,6 @@
 {
   "name": "stimulus-bind",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Enable simple data binding for stimulus framework",
   "main": "dist/stimulus-bind.umd.js",
   "scripts": {
