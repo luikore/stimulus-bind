@@ -1,5 +1,8 @@
+# Use coffee 1 so the class can be compiled
+`
 import Stimulus from "stimulus"
 import jsep from "jsep"
+`
 
 dasherize = (s) ->
   s.replace /([A-Z])/g, (_, char) ->
@@ -239,14 +242,16 @@ StimulusBind = class extends Stimulus.Controller
     disconnectObserver @
 
 stimulusApp = null
-StimulusBind.register = (klass, binding) ->
+StimulusBind.register = (elName, klass, kvs) ->
   if !stimulusApp
     stimulusApp = Stimulus.Application.start()
 
-  stimulusApp.register klass
   klass.targets = []
   for k of kvs
     klass.targets.push k
   klass.$bind = compileBind kvs
+
+  # after target computed
+  stimulusApp.register elName, klass
 
 export default StimulusBind

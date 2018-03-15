@@ -26,9 +26,9 @@ builtin-modules@^2.0.0:
   version "2.0.0"
   resolved "https://registry.yarnpkg.com/builtin-modules/-/builtin-modules-2.0.0.tgz#60b7ef5ae6546bd7deefa74b08b62a43a232648e"
 
-coffeescript@^2.2.3:
-  version "2.2.3"
-  resolved "https://registry.yarnpkg.com/coffeescript/-/coffeescript-2.2.3.tgz#a8a42170c28bea240f4c3f56c57e1f46487f88b9"
+coffeescript@1.12.7:
+  version "1.12.7"
+  resolved "https://registry.yarnpkg.com/coffeescript/-/coffeescript-1.12.7.tgz#e57ee4c4867cf7f606bfc4a0f2d550c0981ddd27"
 
 is-module@^1.0.0:
   version "1.0.0"

@@ -21,7 +21,7 @@
   },
   "homepage": "https://github.com/luikore/stimulus-bind#readme",
   "devDependencies": {
-    "coffeescript": "^2.2.3",
+    "coffeescript": "1.12.7",
     "jsep": "^0.3.3",
     "rollup": "^0.56.5",
     "rollup-plugin-node-resolve": "^3.2.0",
