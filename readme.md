@@ -40,7 +40,7 @@ class MyController extends StimulusBind {
 
 StimulusBind.register('foo_controller', MyController, {
   my_name_greet: {text: '"Hello, " + myName', if: 'myName'},
-  my_name_error: {if: 'myName'}
+  my_name_error: {if: '!myName'}
 })
 ```
 
