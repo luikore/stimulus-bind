@@ -49,6 +49,13 @@ compileTraverse = (ast, dependencies, out) ->
       compileTraverse(ast.right, dependencies, out)
       out.push ')'
 
+    when 'LogicalExpression'
+      out.push '('
+      compileTraverse(ast.left, dependencies, out)
+      out.push(ast.operator)
+      compileTraverse(ast.right, dependencies, out)
+      out.push ')'
+
     when 'ConditionalExpression'
       out.push '('
       compileTraverse(ast.test, dependencies, out)
