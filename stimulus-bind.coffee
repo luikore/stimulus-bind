@@ -15,7 +15,9 @@ camelize = (s) ->
 compileTraverse = (ast, dependencies, out) ->
   switch ast.type
     when 'CallExpression'
-      compileTraverse ast.callee, dependencies, out
+      if ast.callee.type != 'Identifier'
+        throw 'we do not support code as data in the expression, please call an instance method instead'
+      out.push 'self.' + ast.callee.name
       out.push '('
       firstArg = true
       for a in ast.arguments
@@ -76,6 +78,7 @@ compileTraverse = (ast, dependencies, out) ->
     when 'Identifier'
       dependencies[ast.name] = true
       out.push 'self.' + ast.name
+
     else
       throw "unsupported ast type: " + ast.type
 

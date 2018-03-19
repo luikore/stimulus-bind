@@ -86,3 +86,5 @@ There is no `each` binder, the complexity of rendering `each` binders is beyond 
 It is a very simple data binding, elements won't refresh if you change nested data like: `this.someData.foo = bar`.
 
 Instead, you can: `this.someData.foo = bar; this.someData = this.someData; // triggers update`.
+
+You can only use instance method in a function call in the binder expression, and the method must be pure.
