@@ -112,7 +112,8 @@ classApplyer = (className) ->
     tc = " #{target.className} " # trick to ensure space around
     if tc.indexOf(className) == -1 and value
       target.className += " #{className}"
-    else
+    # do not use `else`...
+    if tc.indexOf(className) != -1 and !value
       target.className = tc.replace(" #{className} ", ' ').trim()
 
 attrApplyer = (attrName) ->
