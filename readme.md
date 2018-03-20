@@ -47,6 +47,8 @@ StimulusBind.register('foo_controller', MyController, {
 - Inherit the controller from `StimulusBind` instead of `stimulus.Controller`.
 - Do not set the `targets` field in controller, instead, set bindings when registering.
 - `register` under StimulusBind, a global app will be created when needed.
+- `ref(targetName)` returns the first target in or not in DOM (including the ones hidden by `if` binders).
+- `refs(targetname)` returns all targets, including the ones detached by `if` binders.
 
 The binding data is in the format of:
 

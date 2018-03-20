@@ -200,11 +200,7 @@ applyChanges = (self, force) ->
   for spec, value of applyQueue
     [targetName, attr] = spec.split('.')
     applyer = convertAttrApplyer attr
-    targets = self.targets.findAll targetName
-    targets = (t for t in targets)
-    if self.$detachedTargets[targetName]
-      for t in self.$detachedTargets[targetName]
-        targets.push(t)
+    targets = self.refs targetName
     try
       for target in targets
         applyer self, target, value # TODO try...catch
@@ -225,6 +221,9 @@ connectObserver = (self) ->
       childList: true
       subtree: true
     }
+
+findAll = (name, node, res) ->
+  node.querySelectorAll("[data-target~='#{name}']")
 
 StimulusBind = class extends Stimulus.Controller
   initialize: ->
@@ -252,8 +251,25 @@ StimulusBind = class extends Stimulus.Controller
           applyChanges self
           return
 
+  refs: (name) ->
+    selector = "[data-target~='#{@identifier}.#{name}']"
+    a = Array.from @element.querySelectorAll selector
+    for n, ts of @$detachedTargets
+      if n == name
+        a = a.concat ts
+      for t in ts
+        a = a.concat Array.from t.querySelectorAll selector
+    a
+
   ref: (name) ->
-    @targets.find name
+    selector = "[data-target~='#{@identifier}.#{name}']"
+    e = @element.querySelector selector
+    return e if e
+    for _, ts of @$detachedTargets
+      for t in ts
+        e = t.querySelector selector
+        return e if e
+    undefined
 
   connect: ->
     self = @
