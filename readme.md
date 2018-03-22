@@ -53,7 +53,7 @@ StimulusBind.register('foo_controller', MyController, {
 The binding data is in the format of:
 
     {
-        {targetName}: {{binder1}: {bindValueExpression1}, {binder2}: {bindValueExpression2}}
+        {targetName}: {{binder1}: {bindValueExpression1}, {binder2}: {bindValueExpression2}, ...}
     }
 
 All bindings are one-way binding.
