@@ -10,8 +10,6 @@ Include in your project:
     # or
     npm i stimulus-bind jsep stimulus --save
 
-Or use the `stimulus.umd.js` directly (which can expose a `StimulusBind` in global).
-
 Template
 
 ```html
@@ -53,7 +51,11 @@ StimulusBind.register('foo_controller', MyController, {
 The binding data is in the format of:
 
     {
-        {targetName}: {{binder1}: {bindValueExpression1}, {binder2}: {bindValueExpression2}, ...}
+        {targetName}: {
+            {binder1}: {bindValueExpression1},
+            {binder2}: {bindValueExpression2},
+            ...
+        }
     }
 
 All bindings are one-way binding.
@@ -68,7 +70,7 @@ Expressions must a string of simple js expression that `jsep` can parse. In the 
 
 And the framework will compute what values does this expression depend on and do a minimal update when neccessary.
 
-### Binders
+### Available Binders
 
 - `value` value of input element
 - `checked` checkbox or radio is checked

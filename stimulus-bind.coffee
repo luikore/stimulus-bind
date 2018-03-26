@@ -279,10 +279,11 @@ StimulusBind = class extends Stimulus.Controller
   disconnect: ->
     disconnectObserver @
 
-stimulusApp = null
+StimulusBind.application = null
+
 StimulusBind.register = (elName, klass, kvs) ->
-  if !stimulusApp
-    stimulusApp = Stimulus.Application.start()
+  if !StimulusBind.application
+    StimulusBind.application = Stimulus.Application.start()
 
   klass.targets = []
   for k of kvs
@@ -290,6 +291,6 @@ StimulusBind.register = (elName, klass, kvs) ->
   klass.$bind = compileBind kvs
 
   # after target computed
-  stimulusApp.register elName, klass
+  StimulusBind.application.register elName, klass
 
 export default StimulusBind
